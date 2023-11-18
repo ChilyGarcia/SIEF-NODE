@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { createAccesToken } from "../libs/jwt.js";
 
 export const register = async (req, res) => {
-  const { nombres, apellidos, email, password } = req.body;
+  const { nombres, apellidos, email, password, role} = req.body;
 
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -12,6 +12,7 @@ export const register = async (req, res) => {
       nombres,
       apellidos,
       email,
+      role,
       password: passwordHash,
     });
 
@@ -22,6 +23,7 @@ export const register = async (req, res) => {
         nombres: responseUserSaved.nombres,
         apellidos: responseUserSaved.apellidos,
         email: responseUserSaved.email,
+        role: responseUserSaved.role,
         createdAt: responseUserSaved.createdAt,
         updatedAt: responseUserSaved.updatedAt,
       });
@@ -56,7 +58,8 @@ export const login = async (req, res) => {
       username: userFound.username,
       createdAt: userFound.createdAt,
       updatedAt: userFound.updatedAt,
-      token: token
+      token: token,
+      role: userFound.role
     });
   } catch (error) {
     res.status(504).json({ message: error.message });

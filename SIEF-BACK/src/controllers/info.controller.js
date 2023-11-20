@@ -1,5 +1,8 @@
-import Info from "../models/info.models.js";
-import Audits from "../models/audits.model.js";
+import { conexion } from "../db.js";
+import util from "util";
+import moment from "moment";
+
+const queryAsync = util.promisify(conexion.query).bind(conexion);
 
 export const newInfo = async (req, res) => {
   const {
@@ -13,7 +16,7 @@ export const newInfo = async (req, res) => {
   } = req.body;
 
   try {
-    const newInfo = new Info({
+    const nuevoInfo = {
       codigo,
       programa,
       periodo,
@@ -21,23 +24,25 @@ export const newInfo = async (req, res) => {
       admitidos,
       matriculados,
       graduados,
+    };
+
+    const insertResults = await queryAsync(
+      "INSERT INTO informacion SET ?",
+      nuevoInfo
+    );
+
+    res.status(200).json({
+      codigo: insertResults.insertId,
+      programa: nuevoInfo.programa,
+      periodo: nuevoInfo.periodo,
+      inscritos: nuevoInfo.inscritos,
+      admitidos: nuevoInfo.admitidos,
+      matriculados: nuevoInfo.matriculados,
+      graduados: nuevoInfo.graduados,
     });
-
-    const infoSave = await newInfo.save();
-
-    if (infoSave) {
-      res.send({
-        codigo: infoSave.codigo,
-        programa: infoSave.programa,
-        periodo: infoSave.periodo,
-        inscritos: infoSave.inscritos,
-        admitidos: infoSave.admitidos,
-        matriculados: infoSave.matriculados,
-        graduados: infoSave.graduados,
-      });
-    }
-  } catch (err) {
-    res.send("An error occurred");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al agregar nueva información" });
   }
 };
 
@@ -45,50 +50,90 @@ export const newAudit = async (req, res) => {
   const { accion, programa, fecha, usuario } = req.body;
 
   try {
-    const newAudit = new Audits({
+    const nuevoAudit = {
       accion,
       programa,
       fecha,
       usuario,
+    };
+
+    const insertResults = await queryAsync(
+      "INSERT INTO auditorias SET ?",
+      nuevoAudit
+    );
+
+    res.status(200).json({
+      id: insertResults.insertId,
+      accion: nuevoAudit.accion,
+      programa: nuevoAudit.programa,
+      fecha: nuevoAudit.fecha,
+      usuario: nuevoAudit.usuario,
     });
-
-    const auditSave = await newAudit.save();
-
-    if (auditSave) {
-      res.send({
-        accion: auditSave.accion,
-        programa: auditSave.programa,
-        fecha: auditSave.fecha,
-        usuario: auditSave.usuario,
-      });
-    }
-  } catch (err) {
-    console.log("An error ocurred");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al agregar nuevo auditoría" });
   }
 };
 
 export const getInfo = async (req, res) => {
   try {
-    const allFind = await Info.find().select({
-      _id: 0,
-      __v: 0,
-    });
+    const selectResults = await queryAsync("SELECT * FROM informacion");
+    const allFind = selectResults.map((info) => ({
+      codigo: info.codigo,
+      programa: info.programa,
+      periodo: info.periodo,
+      inscritos: info.inscritos,
+      admitidos: info.admitidos,
+      matriculados: info.matriculados,
+      graduados: info.graduados,
+    }));
 
     res.send(allFind);
   } catch (err) {
-    res.status(500).send("An error ocurred in get info");
+    console.error(err);
+    res.status(500).send("An error occurred in get info");
+  }
+};
+
+export const getInfoFiveYears = async (req, res) => {
+
+  const { programa } = req.body;
+  try {
+    const selectResults = await queryAsync(
+      "SELECT * FROM informacion WHERE programa = ? ORDER BY SUBSTRING_INDEX(periodo, '-', 1) DESC LIMIT 5",
+      [programa]
+    );
+
+    const allFind = selectResults.map((info) => ({
+      codigo: info.codigo,
+      programa: info.programa,
+      periodo: info.periodo,
+      inscritos: info.inscritos,
+      admitidos: info.admitidos,
+      matriculados: info.matriculados,
+      graduados: info.graduados,
+    }));
+
+    res.send(allFind);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("An error occurred in get info");
   }
 };
 
 export const getAudits = async (req, res) => {
   try {
-    const allFind = await Audits.find().select({
-      _id: 0,
-      __v: 0,
-    });
+    const selectResults = await queryAsync("SELECT * FROM auditorias");
+    const allFind = selectResults.map((audit) => ({
+      accion: audit.accion,
+      programa: audit.programa,
+      fecha: moment(audit.fecha).format("YYYY-MM-DD"),
+      usuario: audit.usuario,
+    }));
 
     res.send(allFind);
   } catch (err) {
-    res.status(500).send("An error ocurred in get info");
+    console.error(err);
+    res.status(500).send("An error occurred in get audits");
   }
 };

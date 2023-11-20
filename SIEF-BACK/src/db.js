@@ -1,3 +1,5 @@
+/*
+
 import mongoose from "mongoose";
 
 export const connDB = async () => {
@@ -8,3 +10,14 @@ export const connDB = async () => {
     console.log("Database connection error: " + e.message);
   }
 };
+
+
+*/
+import mysql from "mysql";
+
+export const conexion = mysql.createConnection({
+  host: "localhost",
+  database: "sief-node",
+  user: "root",
+  password: "",
+});

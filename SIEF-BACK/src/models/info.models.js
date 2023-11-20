@@ -26,7 +26,7 @@ const infoSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
-  matriculados: {  // Fix the field name here
+  matriculados: { 
     type: String,
     required: true,
     trim: true,
